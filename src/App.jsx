@@ -12,14 +12,36 @@ import {
 } from 'lucide-react'
 
 const defaultLink = 'https://zuselogic.com'
+const defaultQrColor = '#07085f'
+const colorSwatches = ['#07085f', '#0698d8', '#863bff', '#0f766e', '#dc2626', '#111827']
+const hexColorPattern = /^#[0-9a-fA-F]{6}$/
+
+function BrandMark() {
+  return (
+    <span className="grid size-10 place-items-center rounded-lg bg-[#07085f] text-white shadow-[0_14px_34px_rgba(7,8,95,0.18)]">
+      <span className="grid grid-cols-3 gap-0.5" aria-hidden="true">
+        {Array.from({ length: 9 }).map((_, index) => (
+          <span
+            key={index}
+            className={`size-1.5 rounded-[1px] ${
+              [0, 1, 2, 3, 6, 8].includes(index) ? 'bg-white' : 'bg-[#21c4f3]'
+            }`}
+          />
+        ))}
+      </span>
+    </span>
+  )
+}
 
 function App() {
   const [websiteLink, setWebsiteLink] = useState(defaultLink)
+  const [qrColor, setQrColor] = useState(defaultQrColor)
+  const [colorInput, setColorInput] = useState(defaultQrColor)
   const [qrImage, setQrImage] = useState('')
   const [message, setMessage] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const generateQrCode = useCallback(async (value) => {
+  const generateQrCode = useCallback(async (value, color = qrColor) => {
     const trimmedLink = value.trim()
 
     if (!trimmedLink) {
@@ -37,7 +59,7 @@ function App() {
         margin: 2,
         scale: 8,
         color: {
-          dark: '#07085f',
+          dark: color,
           light: '#ffffff',
         },
       })
@@ -49,7 +71,7 @@ function App() {
     } finally {
       setIsGenerating(false)
     }
-  }, [])
+  }, [qrColor])
 
   useEffect(() => {
     let isCurrent = true
@@ -59,7 +81,7 @@ function App() {
       margin: 2,
       scale: 8,
       color: {
-        dark: '#07085f',
+        dark: defaultQrColor,
         light: '#ffffff',
       },
     })
@@ -76,6 +98,23 @@ function App() {
       isCurrent = false
     }
   }, [])
+
+  const handleColorChange = (color) => {
+    setQrColor(color)
+    setColorInput(color)
+    generateQrCode(websiteLink, color)
+  }
+
+  const handleColorInputChange = (value) => {
+    const nextValue = value.startsWith('#') ? value : `#${value}`
+
+    setColorInput(nextValue)
+
+    if (hexColorPattern.test(nextValue)) {
+      setQrColor(nextValue)
+      generateQrCode(websiteLink, nextValue)
+    }
+  }
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -96,11 +135,7 @@ function App() {
       <header className="border-b border-[#d8f5ff] bg-white">
         <div className="mx-auto flex min-h-16 w-full max-w-6xl items-center justify-between gap-5 px-5 sm:px-8 lg:min-h-20">
           <a href="/" className="flex items-center gap-3 no-underline" aria-label="ZuseQR home">
-            <img
-              src="/favicon.svg"
-              alt=""
-              className="size-10 shrink-0 drop-shadow-[0_14px_26px_rgba(134,59,255,0.22)]"
-            />
+            <BrandMark />
             <span className="flex flex-col">
               <span className="text-xl font-black leading-none tracking-normal text-[#07085f] sm:text-2xl">
                 ZuseQR
@@ -159,6 +194,48 @@ function App() {
               <p id="link-help" className="mt-3 max-w-xl text-sm font-medium leading-6 text-[#5e6a88]">
                 Paste a website URL and generate a clean PNG QR code for menus, posters, cards, and counters.
               </p>
+
+              <div className="mt-4 rounded-lg border border-[#d8f5ff] bg-[#f9feff] p-4">
+                <label htmlFor="qr-color" className="text-sm font-black text-[#07085f]">
+                  QR code color
+                </label>
+
+                <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+                  <input
+                    id="qr-color"
+                    type="color"
+                    value={qrColor}
+                    onChange={(event) => handleColorChange(event.target.value)}
+                    className="h-11 w-full cursor-pointer rounded-md border border-[#bfefff] bg-white p-1 sm:w-16"
+                    aria-label="Choose QR code color"
+                  />
+                  <input
+                    type="text"
+                    value={colorInput}
+                    onChange={(event) => handleColorInputChange(event.target.value)}
+                    pattern="^#[0-9A-Fa-f]{6}$"
+                    maxLength={7}
+                    className="min-h-11 rounded-md border border-[#bfefff] bg-white px-3 text-sm font-black uppercase text-[#07085f] outline-none focus:border-[#0698d8] focus:ring-3 focus:ring-[#a8edff]"
+                    aria-label="QR code color hex value"
+                  />
+                  <div className="flex flex-wrap gap-2" aria-label="Quick color choices">
+                    {colorSwatches.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => handleColorChange(color)}
+                        className={`size-8 rounded-full border-2 transition focus:outline-none focus:ring-3 focus:ring-[#a8edff] ${
+                          qrColor.toLowerCase() === color
+                            ? 'border-[#07085f]'
+                            : 'border-white shadow-[0_0_0_1px_#bfefff]'
+                        }`}
+                        style={{ backgroundColor: color }}
+                        aria-label={`Use QR color ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
 
               {message ? (
                 <p id="link-message" className="mt-4 rounded-md border border-[#ffd6cc] bg-[#fff7f5] px-4 py-3 text-sm font-bold text-[#9e2d11]">
